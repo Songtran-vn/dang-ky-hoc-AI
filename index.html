@@ -91,9 +91,10 @@ nav {
 .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 5vw, 52px); font-weight: 300; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 40px; }
 .section-title em { font-style: italic; color: var(--gold); }
 .lb-table { background: white; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; box-shadow: 0 4px 32px var(--shadow); }
-.lb-header { display: grid; grid-template-columns: 64px 1fr 130px; padding: 14px 24px; background: var(--ink); gap: 16px; }
+.lb-header { display: grid; grid-template-columns: 64px 1fr 120px 110px; padding: 14px 24px; background: var(--ink); gap: 16px; }
 .lb-header span { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); }
-.lb-row { display: grid; grid-template-columns: 64px 1fr 130px; align-items: center; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--border-soft); transition: background 0.2s; animation: fadeUp 0.5s ease both; }
+.lb-row { display: grid; grid-template-columns: 64px 1fr 120px 110px; align-items: center; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--border-soft); transition: background 0.2s; animation: fadeUp 0.5s ease both; }
+.lb-phone-cell { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink-muted); letter-spacing: 1px; }
 .lb-row:last-child { border-bottom: none; }
 .lb-row:hover { background: var(--warm-white); }
 .lb-row.rank-1 { background: linear-gradient(90deg, rgba(212,170,62,0.07), transparent); }
@@ -159,7 +160,8 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
   .info-sep { display: none; }
   .cd-unit { min-width: 70px; padding: 16px 14px; }
   .cd-num { font-size: 32px; }
-  .lb-header, .lb-row { grid-template-columns: 44px 1fr 80px; padding: 14px 16px; gap: 10px; }
+  .lb-header, .lb-row { grid-template-columns: 40px 1fr 80px; padding: 14px 16px; gap: 10px; }
+  .lb-phone-cell { display: none; }
   .ref-box { flex-direction: column; align-items: stretch; }
   .ref-link-text { white-space: normal; word-break: break-all; }
   .copy-btn { text-align: center; }
@@ -225,6 +227,7 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
     <div class="lb-header">
       <span>Hạng</span>
       <span>Tên</span>
+      <span>SĐT</span>
       <span style="text-align:right">Lượt giới thiệu</span>
     </div>
     <div id="leaderboard-body">
@@ -291,7 +294,7 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
 <script>
   // ══════════════════════════════════════════
   // ⚠️  THAY THẾ URL NÀY BẰNG APPS SCRIPT URL CỦA BẠN
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9iNCIZNDICBkhp9ABduu8vvOqnpTm34DcKxcoyUuqFC2iG4izlBB-wcFdWReBXrWOVQ/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmoICilnyaKf7NUB0SIOynSd2ZdVRWM3OlYiknviWACl8BL8iLz02_0CmrvRMBBA5d6A/exec";
   // ══════════════════════════════════════════
 
   function getParam(k) { return new URLSearchParams(window.location.search).get(k); }
@@ -333,6 +336,7 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
       <div class="lb-row ${ranks[i]||''}" style="animation-delay:${i*.07}s">
         <div class="lb-rank-num">${nums[i]||i+1}</div>
         <div class="lb-name-cell">${esc(item.name)}</div>
+        <div class="lb-phone-cell">****${esc(item.phone)}</div>
         <div><div class="lb-count-cell">${item.count}</div><span class="lb-count-sub">lượt</span></div>
       </div>`).join('');
   }
