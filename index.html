@@ -291,7 +291,7 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
 <script>
   // ══════════════════════════════════════════
   // ⚠️  THAY THẾ URL NÀY BẰNG APPS SCRIPT URL CỦA BẠN
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzQYCsVLVW4xMlOmGOGQZPL4D2wPL1zmRyrzpt40xJdAayCXXiliGalFGli6kHTlCQcOA/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9iNCIZNDICBkhp9ABduu8vvOqnpTm34DcKxcoyUuqFC2iG4izlBB-wcFdWReBXrWOVQ/exec";
   // ══════════════════════════════════════════
 
   function getParam(k) { return new URLSearchParams(window.location.search).get(k); }
@@ -318,30 +318,52 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
   }
   tick(); setInterval(tick, 1000);
 
-  // LEADERBOARD
+  // LEADERBOARD — dùng JSONP để bypass CORS của Apps Script
   function esc(s) { return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 
-  async function loadLeaderboard() {
+  function renderLeaderboard(data) {
     const body = document.getElementById('leaderboard-body');
-    try {
-      const res  = await fetch(`${APPS_SCRIPT_URL}?action=getLeaderboard`);
-      const data = await res.json();
-      if (!data.leaderboard?.length) {
-        body.innerHTML = `<div class="lb-empty">Chưa có ai dẫn đầu — hãy là người tiên phong ✦</div>`;
-        return;
-      }
-      const ranks = ['rank-1','rank-2','rank-3','',''];
-      const nums  = ['I','II','III','IV','V'];
-      body.innerHTML = data.leaderboard.map((item, i) => `
-        <div class="lb-row ${ranks[i]||''}" style="animation-delay:${i*.07}s">
-          <div class="lb-rank-num">${nums[i]||i+1}</div>
-          <div class="lb-name-cell">${esc(item.name)}</div>
-          <div><div class="lb-count-cell">${item.count}</div><span class="lb-count-sub">lượt</span></div>
-        </div>`).join('');
-    } catch {
-      body.innerHTML = `<div class="lb-empty">Không thể tải bảng xếp hạng</div>`;
+    if (!data.leaderboard?.length) {
+      body.innerHTML = `<div class="lb-empty">Chưa có ai dẫn đầu — hãy là người tiên phong ✦</div>`;
+      return;
     }
+    const ranks = ['rank-1','rank-2','rank-3','',''];
+    const nums  = ['I','II','III','IV','V'];
+    body.innerHTML = data.leaderboard.map((item, i) => `
+      <div class="lb-row ${ranks[i]||''}" style="animation-delay:${i*.07}s">
+        <div class="lb-rank-num">${nums[i]||i+1}</div>
+        <div class="lb-name-cell">${esc(item.name)}</div>
+        <div><div class="lb-count-cell">${item.count}</div><span class="lb-count-sub">lượt</span></div>
+      </div>`).join('');
   }
+
+  function loadLeaderboard() {
+    const body = document.getElementById('leaderboard-body');
+    // Xoá script JSONP cũ nếu có
+    const old = document.getElementById('jsonp-lb');
+    if (old) old.remove();
+
+    // Timeout fallback
+    const timer = setTimeout(() => {
+      body.innerHTML = `<div class="lb-empty">Không thể tải bảng xếp hạng</div>`;
+    }, 8000);
+
+    // Callback toàn cục
+    window.__lbCallback = (data) => {
+      clearTimeout(timer);
+      renderLeaderboard(data);
+    };
+
+    const script = document.createElement('script');
+    script.id = 'jsonp-lb';
+    script.src = `${APPS_SCRIPT_URL}?action=getLeaderboard&callback=__lbCallback&_=${Date.now()}`;
+    script.onerror = () => {
+      clearTimeout(timer);
+      body.innerHTML = `<div class="lb-empty">Không thể tải bảng xếp hạng</div>`;
+    };
+    document.head.appendChild(script);
+  }
+
   loadLeaderboard(); setInterval(loadLeaderboard, 30000);
 
   // VALIDATE
