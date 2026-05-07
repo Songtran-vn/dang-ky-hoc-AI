@@ -294,7 +294,7 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
 <script>
   // ══════════════════════════════════════════
   // ⚠️  THAY THẾ URL NÀY BẰNG APPS SCRIPT URL CỦA BẠN
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmoICilnyaKf7NUB0SIOynSd2ZdVRWM3OlYiknviWACl8BL8iLz02_0CmrvRMBBA5d6A/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWplZRQVqjMNyNFjTQSfkgflDiTyNAW_oGym9pwCVh_X7miGgbLbGqn6AymbvvLivgrg/exec";
   // ══════════════════════════════════════════
 
   function getParam(k) { return new URLSearchParams(window.location.search).get(k); }
@@ -378,37 +378,65 @@ footer { text-align: center; padding: 48px 24px 56px; position: relative; z-inde
     return ok;
   }
 
-  // REGISTER
-  async function handleRegister() {
+  // REGISTER — dùng JSONP GET để nhận refCode thật từ server
+  function handleRegister() {
     const v1 = validate('name',  v => v.length >= 2,                        'err-name');
     const v2 = validate('email', v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'err-email');
     const v3 = validate('phone', v => /^[0-9]{10}$/.test(v),                'err-phone');
     if (!v1||!v2||!v3) return;
 
-    const name=document.getElementById('name').value.trim(),
-          email=document.getElementById('email').value.trim(),
-          phone=document.getElementById('phone').value.trim();
+    const name  = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const ref   = getParam('ref') || '';
 
-    const btn=document.getElementById('submit-btn'), txt=document.getElementById('btn-text');
-    btn.disabled=true;
-    txt.innerHTML=`<div class="spinner" style="border-color:rgba(255,255,255,0.2);border-top-color:#fff;width:16px;height:16px"></div> Đang xử lý…`;
+    const btn = document.getElementById('submit-btn');
+    const txt = document.getElementById('btn-text');
+    btn.disabled = true;
+    txt.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.2);border-top-color:#fff;width:16px;height:16px"></div> Đang xử lý…`;
 
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method:'POST', mode:'no-cors',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'register', name, email, phone, referred_by: getParam('ref')||'' })
-      });
-      const refCode = 'REF'+Date.now().toString(36).toUpperCase();
-      localStorage.setItem('refCode', refCode);
-      localStorage.setItem('registered','1');
-      showReferral(refCode);
-      loadLeaderboard();
-      showToast('✦ Đăng ký thành công');
-    } catch {
+    // Timeout fallback
+    const timer = setTimeout(() => {
+      showToast('✗ Hết thời gian chờ, vui lòng thử lại');
+      btn.disabled = false;
+      txt.textContent = 'Hoàn Tất Đăng Ký';
+    }, 10000);
+
+    // JSONP callback
+    window.__registerCallback = (data) => {
+      clearTimeout(timer);
+      const old = document.getElementById('jsonp-reg');
+      if (old) old.remove();
+
+      if (data.success && data.refCode) {
+        localStorage.setItem('refCode', data.refCode);
+        localStorage.setItem('registered', '1');
+        showReferral(data.refCode);
+        loadLeaderboard();
+        showToast('✦ Đăng ký thành công');
+      } else {
+        showToast('✗ Có lỗi xảy ra, vui lòng thử lại');
+        btn.disabled = false;
+        txt.textContent = 'Hoàn Tất Đăng Ký';
+      }
+    };
+
+    const params = new URLSearchParams({
+      action: 'register', name, email, phone,
+      referred_by: ref, callback: '__registerCallback',
+      _: Date.now()
+    });
+
+    const script = document.createElement('script');
+    script.id  = 'jsonp-reg';
+    script.src = `${APPS_SCRIPT_URL}?${params}`;
+    script.onerror = () => {
+      clearTimeout(timer);
       showToast('✗ Có lỗi xảy ra, vui lòng thử lại');
-      btn.disabled=false; txt.textContent='Hoàn Tất Đăng Ký';
-    }
+      btn.disabled = false;
+      txt.textContent = 'Hoàn Tất Đăng Ký';
+    };
+    document.head.appendChild(script);
   }
 
   function showReferral(refCode) {
